@@ -221,7 +221,7 @@ elif menu_principal == "📚 Marco Teórico y Fundamentos":
       " es indispensable una fuerza neta transversal.\n"
       "- **2ª Ley ($F = m \\cdot a$):** La fuerza centrípeta requerida para"
       " mantener el vehículo en la trayectoria circular es:\n\n"
-      "  $$F_c = m \\cdot a_c = m \\cdot \\frac{v^2}{R}$|\n\n"
+      "  $$F_c = m \\cdot a_c = m \\cdot \\frac{v^2}{R}$$\n\n"
       "- **3ª Ley (Acción y Reacción):** El neumático empuja al asfalto hacia"
       " el exterior de la curva mediante fricción, y el asfalto reacciona"
       " empujando al neumático hacia el centro. Esa fuerza de reacción es el"
@@ -251,7 +251,7 @@ elif menu_principal == "📚 Marco Teórico y Fundamentos":
       "$$v_{max} = \\sqrt{\\mu_e \\cdot g \\cdot R}$$"
   )
 
-  st.subheader("5. Círculo de Fricción (Kamm's Circle)")
+  st.subheader("5. Círculo de Fricción (Circulo de Kamm.)")
   st.markdown(
       "La adherencia máxima de un neumático es un vector limitado en un círculo"
       " de radio $\\mu \\cdot N$. Si el conductor acciona los frenos mientras"
