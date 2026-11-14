@@ -79,6 +79,15 @@ st.markdown(
       div[data-testid="stExpander"] { border:1px solid #d7e1ec; border-radius:12px; background:#fff; }
       a { color:#0369a1 !important; font-weight:600; }
       hr { border-color:#d7e1ec; }
+           /* Campos de entrada legibles: fondo blanco y texto oscuro */
+      .stApp { color-scheme: light !important; }
+      div[data-baseweb="select"], div[data-baseweb="select"] *,
+      div[data-baseweb="input"], div[data-baseweb="input"] *,
+      div[data-baseweb="base-input"], div[data-baseweb="base-input"] *,
+      [data-testid="stNumberInputContainer"], [data-testid="stNumberInputContainer"] * { background:#ffffff !important; background-color:#ffffff !important; color:#172033 !important; -webkit-text-fill-color:#172033 !important; }
+      div[data-baseweb="select"] svg, [data-testid="stNumberInputContainer"] svg { fill:#172033 !important; }
+      div[data-baseweb="popover"], div[data-baseweb="popover"] ul, div[data-baseweb="popover"] li { background:#ffffff !important; color:#172033 !important; }
+      div[data-baseweb="popover"] li:hover { background:#e0f2fe !important; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -196,8 +205,8 @@ with tab_resumen:
     st.markdown("#### Secuencia de riesgo que analiza el simulador")
     seq_cols = st.columns(4)
     sequence = [
-        ("01", "Demanda lateral", "La trayectoria curva exige aceleración centrípeta, proporcional a v²/R."),
-        ("02", "Reserva de adherencia", "El neumático tiene un límite de fuerza lateral condicionado por μ y la carga normal."),
+        ("01", "Fuerza centrípeta", "La trayectoria curva exige aceleración centrípeta, proporcional a v²/R."),
+        ("02", "Reserva de adherencia", "El neumático tiene un límite de fuerza centrípeta condicionado por μ y la carga normal."),
         ("03", "Margen consumido", "Frenar mientras se gira utiliza parte de la capacidad disponible de fricción."),
         ("04", "Salida de trayectoria", "Si la demanda supera la capacidad disponible, aumenta el riesgo modelado de deslizamiento y despiste."),
     ]
@@ -314,13 +323,27 @@ with tab_practica:
         st.markdown("#### Lectura inmediata del escenario")
         r1, r2, r3 = st.columns(3)
         r1.metric("Masa del vehículo", f"{fmt_num(float(mass_kg), 0)} kg")
-        r2.metric("Demanda lateral Fc", f"{fmt_num(current['demand_n'])} N")
+        r2.metric("Demanda de la fuerza centrípeta Fc", f"{fmt_num(current['demand_n'])} N")
         r3.metric("Factor de seguridad lateral", f"{fmt_num(current['fs_combined'], 2)}")
         r4, r5, r6 = st.columns(3)
         r4.metric("Capacidad lateral disponible", f"{fmt_num(current['available_n'])} N")
         r5.metric("Velocidad límite idealizada", f"{fmt_num(current['limit_kmh'])} km/h")
         r6.metric("Margen de fuerza", f"{fmt_num(current['margin_n'])} N")
         st.caption(f"Aceleración lateral calculada para el escenario: {fmt_num(current['a_lat_g'], 2)} g.")
+        with st.expander("ℹ️ ¿Qué significa cada resultado? (clic para desplegar)"):
+            st.markdown(
+                """
+                **Factor de seguridad (FS):** cociente entre la fuerza que el neumático puede aportar y la que la curva exige. FS > 1 hay reserva de adherencia; FS = 1 estás en el límite; FS < 1 el vehículo tiende a deslizar y salirse de la trayectoria.
+
+                **Demanda de la fuerza centípeta Fc:** fuerza centrípeta que necesita el vehículo para seguir la curva. Se calcula como m·v²/R: crece con el cuadrado de la velocidad y baja si el radio es mayor.
+
+                **Capacidad lateral disponible:** fuerza máxima que permite la fricción entre neumático y calzada, μ·m·g. Si se activa el frenado, una parte de esa fricción se usa para frenar y queda menos para girar.
+
+                **Velocidad límite idealizada:** velocidad a la que la demanda iguala exactamente a la capacidad (FS = 1). Sale de igualar m·v²/R = μ·m·g, de donde v = √(μ·g·R). La masa se cancela.
+
+                **Margen de fuerza:** capacidad lateral disponible − demanda de la fuerza centrípeta. Positivo: sobra adherencia. Negativo: falta adherencia y se pierde el control en el modelo.
+                """
+            )
 
         if current["fs_combined"] > 1.20:
             status_class = "good"
@@ -343,7 +366,7 @@ with tab_practica:
 
     st.markdown("---")
     st.markdown('<div class="section-kicker">Panel gráfico interactivo</div>', unsafe_allow_html=True)
-    st.subheader("1 · Fuerza lateral requerida frente a capacidad disponible")
+    st.subheader("1 · Fuerza centrípeta requerida frente a capacidad disponible")
     st.write("La línea de demanda crece con el cuadrado de la velocidad. Las líneas de capacidad representan el límite lateral estático, la reserva después de frenar (si se activó) y una referencia simplificada de fricción dinámica.")
 
     speeds = list(range(10, 121, 2))
@@ -353,7 +376,7 @@ with tab_practica:
     for s in speeds:
         q = forces_for_speed(s, float(mass_kg), float(radius_m), mu, brake_g)
         force_series = [
-            ("Demanda lateral", q["demand_n"]),
+            ("Demanda de la fuerza centrípeta", q["demand_n"]),
             ("Capacidad lateral estática", q["capacity_n"]),
             ("Referencia de roce dinámico", q["dynamic_n"]),
         ]
@@ -368,7 +391,7 @@ with tab_practica:
         margin_rows.append({"Velocidad (km/h)": s, "Margen (N)": q["margin_n"]})
 
     force_df = pd.DataFrame(force_rows)
-    force_order = ["Demanda lateral", "Capacidad lateral estática", "Referencia de roce dinámico"]
+    force_order = ["Demanda de la fuerza centrípeta", "Capacidad lateral estática", "Referencia de roce dinámico"]
     force_colors = ["#dc2626", "#0284c7", "#d97706"]
     if braking:
         force_order.insert(2, "Capacidad lateral con frenado")
@@ -399,7 +422,7 @@ with tab_practica:
     )
     fs_spec["encoding"]["y"]["scale"] = {"zero": True, "domainMin": 0}
     st.vega_lite_chart(fs_df, fs_spec, use_container_width=True)
-    st.caption("FS = capacidad lateral estimada / demanda lateral requerida. La línea FS = 1 marca igualdad física en este modelo; no es por sí sola un factor de diseño normativo.")
+    st.caption("FS = capacidad lateral estimada / demanda de la fuerza centrípeta requerida. La línea FS = 1 marca igualdad física en este modelo; no es por sí sola un factor de diseño normativo.")
 
     st.markdown("#### 3 · Margen de adherencia que queda en cada velocidad")
     margin_df = pd.DataFrame(margin_rows)
@@ -441,14 +464,14 @@ with tab_practica:
 with tab_teoria:
     st.markdown('<div class="section-kicker">04 / Fundamentos físico-matemáticos</div>', unsafe_allow_html=True)
     st.subheader("Factor de seguridad frente a la pérdida de control")
-    st.write("El modelo compara la fuerza lateral que exige la curva con la fuerza que el contacto neumático–pavimento podría aportar bajo un coeficiente de fricción asumido.")
+    st.write("El modelo compara la fuerza centrípeta que exige la curva con la fuerza que el contacto neumático–pavimento podría aportar bajo un coeficiente de fricción asumido.")
 
     t1, t2 = st.columns(2, gap="large")
     with t1:
-        st.markdown("#### Demanda lateral")
+        st.markdown("#### Demanda de la fuerza centrípeta")
         st.latex(r"a_y=\frac{v^2}{R}")
         st.latex(r"F_y=m\frac{v^2}{R}")
-        st.markdown("La demanda aumenta con el cuadrado de la velocidad y disminuye cuando aumenta el radio. Por ejemplo, multiplicar la velocidad por 2 multiplica por 4 la demanda lateral, a radio constante.")
+        st.markdown("La demanda aumenta con el cuadrado de la velocidad y disminuye cuando aumenta el radio. Por ejemplo, multiplicar la velocidad por 2 multiplica por 4 la demanda de la fuerza centrípeta, a radio constante.")
     with t2:
         st.markdown("#### Capacidad de adherencia idealizada")
         st.latex(r"F_{\mathrm{adh,max}}=\mu m g")
@@ -555,3 +578,28 @@ with tab_fuentes:
 
 st.markdown("---")
 st.caption("Análisis local de pérdida de control · complemento independiente v2 · sin carga de archivos externos")
+
+import base64
+
+_logo = Path(__file__).parent / "logo_ingenieria.png"
+_logo_html = ""
+if _logo.exists():
+    _b64 = base64.b64encode(_logo.read_bytes()).decode()
+    _logo_html = f'<img src="data:image/png;base64,{_b64}" alt="Facultad de Ingeniería UNMDP" style="height:120px;width:auto;">'
+
+_autores = ["Merlo Thomas", "Justel Lucas", "Pereyra Eugenia Camila", "Pieroni Donato"]
+_chips = "".join(
+    f'<span style="display:inline-block;padding:.35rem .8rem;margin:.2rem .3rem .2rem 0;border:1px solid #c8d7e5;border-radius:999px;background:#f8fbfe;color:#172033;font-size:.88rem;font-weight:600;">{a}</span>'
+    for a in _autores
+)
+
+st.markdown(
+    '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:1.6rem;padding:1.4rem 1.8rem;margin-top:1rem;background:#ffffff;border:1px solid #d7e1ec;border-top:4px solid #0891b2;border-radius:14px;box-shadow:0 4px 14px rgba(15,23,42,.05);">'
+    + _logo_html
+    + '<div style="flex:1;min-width:260px;">'
+    + '<div style="font-size:.73rem;letter-spacing:.15em;text-transform:uppercase;font-weight:800;color:#087f9f;">Trabajo realizado por estudiantes de ingeniería</div>'
+    + '<div style="font-size:1.05rem;font-weight:700;color:#10243a;margin:.3rem 0 .7rem;">UNMDP · Física A · turno mañana</div>'
+    + _chips
+    + '</div></div>',
+    unsafe_allow_html=True,
+)
