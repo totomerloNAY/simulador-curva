@@ -326,7 +326,7 @@ with tab_practica:
         r2.metric("Demanda de la fuerza centrípeta Fc", f"{fmt_num(current['demand_n'])} N")
         r3.metric("Factor de seguridad lateral", f"{fmt_num(current['fs_combined'], 2)}")
         r4, r5, r6 = st.columns(3)
-        r4.metric("Capacidad de la fuezra centrípeta disponible", f"{fmt_num(current['available_n'])} N")
+        r4.metric("Capacidad de la FC. disponible", f"{fmt_num(current['available_n'])} N")
         r5.metric("Velocidad límite idealizada", f"{fmt_num(current['limit_kmh'])} km/h")
         r6.metric("Margen de fuerza", f"{fmt_num(current['margin_n'])} N")
         st.caption(f"Aceleración lateral calculada para el escenario: {fmt_num(current['a_lat_g'], 2)} g.")
