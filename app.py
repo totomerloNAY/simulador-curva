@@ -10,7 +10,7 @@ import streamlit as st
 # Página NUEVA e independiente. No edita el simulador original ni el complemento v1.
 st.set_page_config(
     page_title="Análisis local | Pérdida de control",
-    page_icon="🚘",
+    page_icon=str(Path(__file__).parent / "icono_pestana.png"),
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -326,7 +326,7 @@ with tab_practica:
         r2.metric("Demanda de la fuerza centrípeta Fc", f"{fmt_num(current['demand_n'])} N")
         r3.metric("Factor de seguridad lateral", f"{fmt_num(current['fs_combined'], 2)}")
         r4, r5, r6 = st.columns(3)
-        r4.metric("Capacidad lateral disponible", f"{fmt_num(current['available_n'])} N")
+        r4.metric("Capacidad de la fuezra centrípeta disponible", f"{fmt_num(current['available_n'])} N")
         r5.metric("Velocidad límite idealizada", f"{fmt_num(current['limit_kmh'])} km/h")
         r6.metric("Margen de fuerza", f"{fmt_num(current['margin_n'])} N")
         st.caption(f"Aceleración lateral calculada para el escenario: {fmt_num(current['a_lat_g'], 2)} g.")
@@ -337,18 +337,18 @@ with tab_practica:
 
                 **Demanda de la fuerza centípeta Fc:** fuerza centrípeta que necesita el vehículo para seguir la curva. Se calcula como m·v²/R: crece con el cuadrado de la velocidad y baja si el radio es mayor.
 
-                **Capacidad lateral disponible:** fuerza máxima que permite la fricción entre neumático y calzada, μ·m·g. Si se activa el frenado, una parte de esa fricción se usa para frenar y queda menos para girar.
+                **Capacidad de la fuerza centrípeta  disponible:** fuerza máxima que permite la fricción entre neumático y calzada, μ·m·g. Si se activa el frenado, una parte de esa fricción se usa para frenar y queda menos para girar.
 
                 **Velocidad límite idealizada:** velocidad a la que la demanda iguala exactamente a la capacidad (FS = 1). Sale de igualar m·v²/R = μ·m·g, de donde v = √(μ·g·R). La masa se cancela.
 
-                **Margen de fuerza:** capacidad lateral disponible − demanda de la fuerza centrípeta. Positivo: sobra adherencia. Negativo: falta adherencia y se pierde el control en el modelo.
+                **Margen de fuerza:** capacidad de la fuerza centrípeta  disponible − demanda de la fuerza centrípeta. Positivo: sobra adherencia. Negativo: falta adherencia y se pierde el control en el modelo.
                 """
             )
 
         if current["fs_combined"] > 1.20:
             status_class = "good"
             status_title = "Reserva de adherencia en el modelo"
-            status_text = "La capacidad lateral estimada supera con margen la demanda calculada. Esto no garantiza la seguridad real: el modelo no incluye todas las condiciones del vehículo ni de la vía."
+            status_text = "La capacidad de la fuerza centrípeta estimada supera con margen la demanda calculada. Esto no garantiza la seguridad real: el modelo no incluye todas las condiciones del vehículo ni de la vía."
         elif current["fs_combined"] >= 1.0:
             status_class = "warn"
             status_title = "Margen lateral reducido"
@@ -377,11 +377,11 @@ with tab_practica:
         q = forces_for_speed(s, float(mass_kg), float(radius_m), mu, brake_g)
         force_series = [
             ("Demanda de la fuerza centrípeta", q["demand_n"]),
-            ("Capacidad lateral estática", q["capacity_n"]),
+            ("Capacidad de la fuerza centrípeta estática", q["capacity_n"]),
             ("Referencia de roce dinámico", q["dynamic_n"]),
         ]
         if braking:
-            force_series.append(("Capacidad lateral con frenado", q["available_n"]))
+            force_series.append(("Capacidad de la fuerza centrípeta con frenado", q["available_n"]))
         for name, val in force_series:
             force_rows.append({"Velocidad (km/h)": s, "Serie": name, "Valor": val})
         fs_rows.append({"Velocidad (km/h)": s, "Serie": "FS lateral sin frenado", "Valor": q["fs_static"]})
@@ -391,10 +391,10 @@ with tab_practica:
         margin_rows.append({"Velocidad (km/h)": s, "Margen (N)": q["margin_n"]})
 
     force_df = pd.DataFrame(force_rows)
-    force_order = ["Demanda de la fuerza centrípeta", "Capacidad lateral estática", "Referencia de roce dinámico"]
+    force_order = ["Demanda de la fuerza centrípeta", "Capacidad de la fuerza centrípeta estática", "Referencia de roce dinámico"]
     force_colors = ["#dc2626", "#0284c7", "#d97706"]
     if braking:
-        force_order.insert(2, "Capacidad lateral con frenado")
+        force_order.insert(2, "Capacidad de la fuerza centrípeta con frenado")
         force_colors.insert(2, "#7c3aed")
     force_spec = chart_line_spec(
         "Velocidad de circulación (km/h)", "Fuerza (N)",
@@ -422,7 +422,7 @@ with tab_practica:
     )
     fs_spec["encoding"]["y"]["scale"] = {"zero": True, "domainMin": 0}
     st.vega_lite_chart(fs_df, fs_spec, use_container_width=True)
-    st.caption("FS = capacidad lateral estimada / demanda de la fuerza centrípeta requerida. La línea FS = 1 marca igualdad física en este modelo; no es por sí sola un factor de diseño normativo.")
+    st.caption("FS = capacidad de la fuerza centrípeta estimada / demanda de la fuerza centrípeta requerida. La línea FS = 1 marca igualdad física en este modelo; no es por sí sola un factor de diseño normativo.")
 
     st.markdown("#### 3 · Margen de adherencia que queda en cada velocidad")
     margin_df = pd.DataFrame(margin_rows)
@@ -433,7 +433,7 @@ with tab_practica:
                 "mark": {"type": "line", "color": "#0e7490", "strokeWidth": 3, "point": {"filled": True, "size": 25}},
                 "encoding": {
                     "x": {"field": "Velocidad (km/h)", "type": "quantitative", "title": "Velocidad de circulación (km/h)", "axis": {"labelFontSize": 12, "titleFontSize": 13, "grid": False}},
-                    "y": {"field": "Margen (N)", "type": "quantitative", "title": "Capacidad lateral − demanda (N)", "axis": {"labelFontSize": 12, "titleFontSize": 13, "grid": True, "gridColor": "#dbe4ee", "format": ",.0f"}},
+                    "y": {"field": "Margen (N)", "type": "quantitative", "title": "Capacidad de la fuerza centrípeta − demanda (N)", "axis": {"labelFontSize": 12, "titleFontSize": 13, "grid": True, "gridColor": "#dbe4ee", "format": ",.0f"}},
                     "tooltip": [{"field": "Velocidad (km/h)", "type": "quantitative", "title": "Velocidad", "format": ".0f"}, {"field": "Margen (N)", "type": "quantitative", "title": "Margen", "format": ",.0f"}],
                 },
             },
@@ -442,7 +442,7 @@ with tab_practica:
         "config": {"background": "#ffffff", "view": {"stroke": "#dbe4ee"}, "axis": {"labelColor": "#334155", "titleColor": "#172033", "domainColor": "#9fb0c3", "tickColor": "#9fb0c3"}},
     }
     st.vega_lite_chart(margin_df, margin_spec, use_container_width=True)
-    st.caption("Margen positivo: la capacidad lateral calculada supera la demanda. Margen negativo: la demanda supera la capacidad disponible en el escenario simulado.")
+    st.caption("Margen positivo: la capacidad de la fuerza centrípeta calculada supera la demanda. Margen negativo: la demanda supera la capacidad disponible en el escenario simulado.")
 
     with st.expander("Ver tabla de puntos principales de la curva de respuesta"):
         selected_speeds = [20, 30, 40, 50, 55, 60, 70, 80, 90, 100, 110, 120]
@@ -452,7 +452,7 @@ with tab_practica:
             table_rows.append({
                 "Velocidad (km/h)": s,
                 "Fuerza requerida (N)": fmt_num(q["demand_n"]),
-                "Capacidad lateral disponible (N)": fmt_num(q["available_n"]),
+                "Capacidad de la fuerza centrípeta disponible (N)": fmt_num(q["available_n"]),
                 "FS combinado": fmt_num(q["fs_combined"], 2),
                 "Margen (N)": fmt_num(q["margin_n"]),
             })
